@@ -126,6 +126,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/oidc/config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Whether single sign-on is on, and the provider's name for the button
+         * @description Anonymous by necessity: the login page asks before anyone is signed in. One bit plus a display name, both set by the operator (OIDC_ISSUER, OIDC_CLIENT_ID, OIDC_CLIENT_SECRET, OIDC_REDIRECT_URI, OIDC_NAME); nothing about any account.
+         */
+        get: operations["getOidcConfig"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/oidc/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Start single sign-on (OIDC authorization code + PKCE)
+         * @description A browser navigation, relayed by the web app's /auth/sso/login (the browser never calls the API itself). Sets the `learn_oidc` cookie (state + PKCE verifier + where to land; httpOnly, Secure, SameSite=Lax, path=/api/v1/auth/oidc, ten minutes) and redirects to the provider's authorization endpoint. When single sign-on is off or the provider cannot be reached it redirects to `/login?sso_error=sso_disabled` or `sso_unavailable` instead.
+         */
+        get: operations["startOidcLogin"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/oidc/callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Finish single sign-on
+         * @description Where the provider sends the browser back (to the web app's /auth/sso/callback, which relays here). Checks `state` against the `learn_oidc` cookie, exchanges the code server to server with the PKCE verifier, reads the e-mail from userinfo and signs in the EXISTING account with that e-mail — nobody is ever created, the instance stays invite-only. Starts exactly the session a password login does (both cookies, an `auth.login` audit row with `method: oidc`) and redirects to the saved `next`. Every failure redirects to `/login?sso_error=<code>`: sso_disabled, sso_denied (refused at the provider), sso_expired (no or unreadable flow cookie), sso_state (state mismatch), sso_failed (exchange or userinfo failed), sso_unverified (the provider says the e-mail is unverified), sso_no_account (no account here has that e-mail).
+         */
+        get: operations["finishOidcLogin"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/search": {
         parameters: {
             query?: never;
@@ -1983,6 +2043,12 @@ export interface components {
             /** @description The actor's current roles, re-read from the database at login/refresh time (design §5.1: admin is exclusive). */
             roles: ("student" | "teacher" | "admin")[];
         };
+        /** @description Single sign-on as the login page needs to know it. */
+        OidcConfig: {
+            enabled: boolean;
+            /** @description The provider's name for "Sign in with <name>"; null when single sign-on is off. */
+            name: ((string | null) | null) | null;
+        };
         /** @description The body of a successful login or refresh. */
         AuthSessionResponse: {
             user: components["schemas"]["AuthUser"];
@@ -2520,6 +2586,69 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["Error"];
                 };
+            };
+        };
+    };
+    getOidcConfig: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The single sign-on settings the login page needs. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OidcConfig"];
+                };
+            };
+        };
+    };
+    startOidcLogin: {
+        parameters: {
+            query?: {
+                /** @description Where to land after signing in. Same-site relative paths only; anything else becomes `/`. */
+                next?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description To the provider, or back to /login with an sso_error code. */
+            302: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    finishOidcLogin: {
+        parameters: {
+            query?: {
+                code?: string;
+                state?: string;
+                error?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description To `next` with a new session, or back to /login with an sso_error code. */
+            302: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

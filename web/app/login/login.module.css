@@ -129,3 +129,46 @@
   font-size: 0.85rem;
   color: var(--color-text-secondary);
 }
+
+/* Single sign-on (page.tsx): the provider's button above the form, the same
+   44px target and hairline idiom as .submitButton, and its failure message in
+   the same left-rule style as .error. */
+.ssoButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0.6rem 1.5rem;
+  border: 1px solid var(--color-border-hairline);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+  font-family: var(--font-sans), 'Plus Jakarta Sans', sans-serif;
+  font-weight: 500;
+  font-size: 0.95rem;
+  text-decoration: none;
+}
+
+.ssoButton:hover {
+  background: var(--color-page);
+}
+
+.ssoButton:focus-visible {
+  outline: 2px solid var(--color-link);
+  outline-offset: 2px;
+}
+
+.divider {
+  margin: 1rem 0;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+}
+
+.ssoError {
+  margin: 0 0 1.25rem;
+  padding-left: 0.6rem;
+  border-left: 2px solid var(--color-error);
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+}

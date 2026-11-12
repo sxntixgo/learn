@@ -50,6 +50,13 @@ services:
       # forge X-Forwarded-For and give itself a fresh bucket per request. See
       # api/src/auth/trust-proxy.ts.
       API_TRUST_PROXY: ${API_TRUST_PROXY:-private}
+      # Single sign-on (api/src/auth/oidc.ts): off unless the first four are set.
+      # It only signs in EXISTING accounts by e-mail; the instance stays invite-only.
+      OIDC_ISSUER: ${OIDC_ISSUER:-}
+      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-}
+      OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:-}
+      OIDC_REDIRECT_URI: ${OIDC_REDIRECT_URI:-}
+      OIDC_NAME: ${OIDC_NAME:-}
     # No healthcheck override. api.Dockerfile declares one, pointing at a
     # committed script — see the note there for why an inline `node -e` probe
     # in a compose file is a bad idea.

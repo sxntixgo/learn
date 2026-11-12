@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
-import { fetchMeOrNull } from '../../src/lib/api';
+import { fetchMeOrNull, fetchOidcConfig } from '../../src/lib/api';
+import { ssoErrorMessage, ssoLoginHref } from '../../src/lib/sso';
 import { sanitizeNextPath } from '../../src/lib/next-path';
 import LoginForm from './LoginForm';
 import styles from './login.module.css';
@@ -26,21 +27,28 @@ export const metadata: Metadata = {
  * there is no account left to show anything to — this is the one place
  * left to confirm the irreversible action actually happened, rather than
  * leaving the account holder to wonder whether it did.
+ *
+ * Single sign-on (src/lib/sso.ts): when the API says it is on, "Sign in with
+ * <name>" sits above the password form, and a failed attempt comes back here
+ * as `?sso_error=<code>`, shown as an alert. Signing in that way only ever
+ * reaches an existing account, so the password form stays for everyone else.
  */
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string; deleted?: string }>;
+  searchParams: Promise<{ next?: string; deleted?: string; sso_error?: string }>;
 }) {
   const params = await searchParams;
   const next = sanitizeNextPath(params.next);
   const justDeleted = params.deleted === '1';
+  const ssoError = ssoErrorMessage(params.sso_error);
 
   // Already signed in: nothing to do here but land where they were headed.
   const me = await fetchMeOrNull();
   if (me) {
     redirect(next);
   }
+  const sso = await fetchOidcConfig();
 
   return (
     <div className={styles.page}>
@@ -51,6 +59,19 @@ export default async function LoginPage({
         </p>
       ) : null}
       <p className={styles.intro}>Sign in to browse courses and pick up where you left off.</p>
+      {ssoError ? (
+        <p className={styles.ssoError} role="alert">
+          {ssoError}
+        </p>
+      ) : null}
+      {sso.enabled ? (
+        <>
+          <a className={styles.ssoButton} href={ssoLoginHref(next)}>
+            Sign in with {sso.name}
+          </a>
+          <p className={styles.divider}>or with your password</p>
+        </>
+      ) : null}
       <LoginForm next={next} />
     </div>
   );

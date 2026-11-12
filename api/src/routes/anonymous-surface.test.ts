@@ -83,6 +83,23 @@ const PUBLIC_2XX: ReadonlySet<string> = new Set([
   // `POST /api/v1/auth/logout-all` is deliberately NOT here: revoking every
   // session of an account requires knowing whose, so it refuses.
   'POST /api/v1/auth/logout',
+  // Single sign-on settings for the login page's button: whether it is on and
+  // the provider's display name, both set by the operator. Nothing about any
+  // account. (The OIDC login and callback routes answer 302, never 2xx.)
+  'GET /api/v1/auth/oidc/config',
+]);
+
+/**
+ * Browser navigations that answer an anonymous caller with a REDIRECT, by
+ * design: single sign-on's start and finish (routes/oidc.ts). Without OIDC_*
+ * configured (as here) both send the browser to /login?sso_error=sso_disabled;
+ * configured, the start goes to the provider and the finish only ever signs in
+ * an existing account. Exact, like PUBLIC_2XX, so a new redirecting route is a
+ * diff someone has to look at.
+ */
+const PUBLIC_302: ReadonlySet<string> = new Set([
+  'GET /api/v1/auth/oidc/login',
+  'GET /api/v1/auth/oidc/callback',
 ]);
 
 /** Parses `printRoutes` output into concrete (method, path) pairs. */
@@ -228,9 +245,14 @@ describe('the unauthenticated surface of the whole API', () => {
     expect(new Set(succeeded), 'the unauthenticated surface of this instance has changed').toEqual(PUBLIC_2XX);
   });
 
+  it('redirects exactly the single sign-on navigations', () => {
+    const redirected = probes.filter((p) => p.status >= 300 && p.status < 400).map((p) => p.key);
+    expect(new Set(redirected)).toEqual(PUBLIC_302);
+  });
+
   it('refuses everything else with a 4xx that is about authorization or absence', () => {
     for (const probe of probes) {
-      if (PUBLIC_2XX.has(probe.key)) continue;
+      if (PUBLIC_2XX.has(probe.key) || PUBLIC_302.has(probe.key)) continue;
       expect([400, 401, 403, 404, 405, 409, 410, 413, 415, 429], `${probe.key} answered ${probe.status}`).toContain(
         probe.status,
       );

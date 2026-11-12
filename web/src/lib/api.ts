@@ -805,6 +805,23 @@ export async function setInviteBudget(userId: string, budget: number): Promise<A
  * signed in or not, so it must never throw where a page's own data-loading
  * would.
  */
+export type OidcConfig = components['schemas']['OidcConfig'];
+
+/**
+ * Whether the login page offers "Sign in with <name>" (api/src/routes/oidc.ts).
+ * Anonymous, so a plain fetch rather than apiFetch. A failure reads as "off":
+ * the password form must still render when this one call cannot be answered.
+ */
+export async function fetchOidcConfig(): Promise<OidcConfig> {
+  try {
+    const res = await fetch(`${apiBase()}/api/v1/auth/oidc/config`, { cache: 'no-store' });
+    if (!res.ok) return { enabled: false, name: null };
+    return (await res.json()) as OidcConfig;
+  } catch {
+    return { enabled: false, name: null };
+  }
+}
+
 export async function fetchMeOrNull(): Promise<Me | null> {
   try {
     return await fetchMe();

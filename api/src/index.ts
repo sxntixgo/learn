@@ -22,6 +22,8 @@ import type { SetupRouteDeps } from './routes/setup.ts';
 import { registerSetupRoutes } from './routes/setup.ts';
 import type { AuthRouteDeps } from './routes/auth.ts';
 import { registerAuthRoutes } from './routes/auth.ts';
+import type { OidcRouteDeps } from './routes/oidc.ts';
+import { registerOidcRoutes } from './routes/oidc.ts';
 import type { ProfileRouteDeps } from './routes/profiles.ts';
 import { registerProfileRoutes } from './routes/profiles.ts';
 import type { InviteRouteDeps } from './routes/invites.ts';
@@ -60,6 +62,7 @@ export type BuildServerOptions = CourseRouteDeps &
   AdminRouteDeps &
   SetupRouteDeps &
   AuthRouteDeps &
+  OidcRouteDeps &
   ProfileRouteDeps &
   InviteRouteDeps &
   AdminPeopleRouteDeps &
@@ -150,6 +153,8 @@ export async function buildServer(options: BuildServerOptions = {}) {
   // NULL password_hash that means "cannot authenticate".
   registerSetupRoutes(fastify, { ...options, hashPassword: options.hashPassword ?? hashPassword });
   registerAuthRoutes(fastify, options);
+  // Single sign-on: another way into an EXISTING account, off unless OIDC_* is set.
+  registerOidcRoutes(fastify, options);
   registerSubmissionRoutes(fastify, options);
   registerProfileRoutes(fastify, { ...options, profileRateLimiter });
   // Phase 13 (design §12). Invitations create accounts, so the accept route

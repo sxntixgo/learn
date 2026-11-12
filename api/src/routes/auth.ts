@@ -101,10 +101,11 @@ function normalizeDeviceLabel(raw: unknown): string | null {
   return cleaned.slice(0, MAX_DEVICE_LABEL_LENGTH);
 }
 
-async function startSession(
+/** Also used by single sign-on (routes/oidc.ts): both ways in end in the same session. */
+export async function startSession(
   reply: FastifyReply,
   keys: SigningKeys,
-  user: UserRow,
+  user: Pick<UserRow, 'id'>,
   roles: Role[],
   deviceLabel: string | null,
 ): Promise<void> {

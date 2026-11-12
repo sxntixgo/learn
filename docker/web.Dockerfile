@@ -46,12 +46,15 @@ COPY tsconfig.base.json ./
 # `build.args`, not only under `environment`.
 ARG NEXT_PUBLIC_API_BASE_URL=http://api:3001
 ENV NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL}
+# No usage reports to Vercel from the build (Next.js telemetry is on unless this is set).
+ENV NEXT_TELEMETRY_DISABLED=1
 
 WORKDIR /app/web
 RUN npm run build
 
 # Runtime stage
 FROM node:22-slim
+ENV NEXT_TELEMETRY_DISABLED=1
 
 WORKDIR /app
 
