@@ -27,9 +27,14 @@ describe('parseTrustProxy', () => {
     expect(warning).toBeNull();
   });
 
-  it('accepts a hop count', () => {
-    expect(parseTrustProxy('1')).toEqual({ value: 1, warning: null });
-    expect(parseTrustProxy('2').value).toBe(2);
+  it('refuses a hop count at boot', () => {
+    // Fastify 5.12.5 dropped numeric `trustProxy` (hop counts could be
+    // spoofed through X-Forwarded-*), so a count can no longer be honoured.
+    // Falling back to trust-nothing behind Caddy would put every caller in
+    // one rate-limit bucket (see the module header), so it must stop the
+    // process instead, naming the spellings that still work.
+    expect(() => parseTrustProxy('1')).toThrow(/private/);
+    expect(() => parseTrustProxy('2')).toThrow(TRUST_PROXY_ENV);
   });
 
   it('accepts a CIDR list and trims it', () => {
@@ -94,7 +99,6 @@ describe('describeTrustProxy', () => {
   it('describes each shape for the boot log', () => {
     expect(describeTrustProxy(false)).toContain('nothing');
     expect(describeTrustProxy(true)).toContain('EVERY hop');
-    expect(describeTrustProxy(2)).toContain('2 hop');
     expect(describeTrustProxy(['10.0.0.0/8'])).toBe('10.0.0.0/8');
   });
 });

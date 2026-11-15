@@ -25,8 +25,8 @@
 // what keeps credential brute-forcing throttled while this setting is wrong.
 // ---------------------------------------------------------------------------
 
-/** What Fastify accepts for `trustProxy`. */
-export type TrustProxySetting = boolean | number | string[];
+/** What Fastify accepts for `trustProxy` (no hop counts since Fastify 5.12.5). */
+export type TrustProxySetting = boolean | string[];
 
 export const TRUST_PROXY_ENV = 'API_TRUST_PROXY';
 
@@ -50,8 +50,9 @@ export interface ParseTrustProxyResult {
  *   "private"                — trust loopback and the private ranges. The
  *                              right answer for Caddy in a compose network,
  *                              and what docker-compose.yml should set.
- *   a number, e.g. "1"       — trust exactly this many hops closest to the
- *                              server. Use when the proxy count is known.
+ *   a number, e.g. "1"       — REFUSED (throws). Fastify 5.12.5 removed hop
+ *                              counts because X-Forwarded-* could be spoofed
+ *                              through them; name the trusted range instead.
  *   a CIDR / IP list         — "10.0.0.0/8,192.168.1.5". Most precise.
  *   "true"                   — trust every hop. Accepted because it is what
  *                              the old boolean meant, but it is the forgeable
@@ -74,14 +75,18 @@ export function parseTrustProxy(raw: string | undefined): ParseTrustProxyResult 
       warning:
         `${TRUST_PROXY_ENV}=true trusts EVERY hop, so a client can forge X-Forwarded-For ` +
         `and give itself a fresh rate-limit bucket per request. Set it to "private" (trust ` +
-        `loopback and private ranges), a hop count like "1", or an explicit CIDR list.`,
+        `loopback and private ranges) or an explicit CIDR list.`,
     };
   }
 
-  // A bare integer is a hop count.
+  // A bare integer is a hop count, which Fastify no longer supports.
   if (/^\d+$/.test(value)) {
-    const hops = Number(value);
-    if (hops > 0) return { value: hops, warning: null };
+    if (Number(value) > 0) {
+      throw new Error(
+        `${TRUST_PROXY_ENV}=${value}: hop counts are no longer supported (Fastify 5.12.5 removed ` +
+          `them). Set it to "private" (trust loopback and private ranges) or a CIDR list.`,
+      );
+    }
     return { value: false, warning: `${TRUST_PROXY_ENV}=0 means trust nothing; use "false" to say so plainly.` };
   }
 
@@ -102,6 +107,5 @@ export function parseTrustProxy(raw: string | undefined): ParseTrustProxyResult 
 export function describeTrustProxy(setting: TrustProxySetting): string {
   if (setting === false) return 'nothing (request.ip is the direct peer)';
   if (setting === true) return 'EVERY hop (X-Forwarded-For is client-controlled)';
-  if (typeof setting === 'number') return `the ${setting} hop(s) nearest this server`;
   return setting.join(', ');
 }
