@@ -82,4 +82,11 @@ EXPOSE 3000
 # target `./web/public` and `./web/.next/static`. Verified against a real
 # `next build` here; `web/public/` did not exist as a tracked directory until
 # Phase 14 added the PWA icons, so this path had never actually been exercised.
+#
+# Next's standalone server listens on the address $HOSTNAME resolves to, and
+# Docker sets HOSTNAME to the container id. With the container on two networks
+# (its own + the reverse proxy's) that resolves to whichever network Docker
+# attached first, so the proxy sometimes got "connection refused" (seen on moon
+# 2026-11-15). Listen on every interface instead.
+ENV HOSTNAME=0.0.0.0
 CMD ["node", "web/server.js"]
