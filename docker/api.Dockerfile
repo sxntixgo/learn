@@ -45,9 +45,14 @@ FROM node:22-slim
 # have to track the database's major version forever. The postgres:17 image
 # already has matching tools — take backups from THERE:
 #   docker compose exec learn-db pg_dump -U learn -Fc learn > learn.dump
+# + OS security fixes newer than the base image (moon image scan)
 RUN apt-get update \
+  && apt-get upgrade -y --no-install-recommends \
   && apt-get install -y --no-install-recommends git ca-certificates \
   && rm -rf /var/lib/apt/lists/*
+
+# npm is used at runtime (migrations); upgrade its bundled packages (moon image scan)
+RUN npm install -g npm@11 && npm cache clean --force
 
 WORKDIR /app
 

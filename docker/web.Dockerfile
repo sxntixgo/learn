@@ -54,6 +54,12 @@ RUN npm run build
 
 # Runtime stage
 FROM node:22-slim
+
+# OS security fixes newer than the base image (moon image scan)
+RUN apt-get update \
+ && apt-get upgrade -y --no-install-recommends \
+ && rm -rf /var/lib/apt/lists/*
+
 ENV NEXT_TELEMETRY_DISABLED=1
 
 WORKDIR /app
