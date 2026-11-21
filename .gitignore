@@ -26,3 +26,6 @@ playwright-report/
 # machine that touched the repo, and rode along in `git add -A`. They carry no
 # project information at all.
 .DS_Store
+
+# Claude skill scratch files
+.claude-skills-work/
